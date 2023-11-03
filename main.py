@@ -1,4 +1,6 @@
+from cgi import print_form
 import random
+
 
 # Cell class
 class Cell:
@@ -16,25 +18,26 @@ class Cell:
     def toggle_flag(self):
         self.flagged = not self.flagged
 
-    # Reveal the cell state 
+    # Reveal the cell state
     def reveal(self):
-        self.revealed = True  
+        self.revealed = True
+
 
 # Grid class
 class Grid:
     # Initialize a Grid
-    def __init__(self, width, height, mines):
-        self.width = width
-        self.height = height
+    def __init__(self, row, column, mines):
+        self.row = row
+        self.column = column
         self.mines = mines
-        self.grid = [[Cell() for _ in range(width)] for _ in range(height)]
+        self.grid = [[Cell() for _ in range(row)] for _ in range(column)]
         self.add_mines()
 
     # Add mines to the grid at random
     def add_mines(self):
-        mine_count = 0 
+        mine_count = 0
         while mine_count < self.mines:
-            x,y = random.randint(0,self.width-1), random.randint(0,self.height-1)
+            y, x = random.randint(0, self.row - 1), random.randint(0, self.column - 1)
             if not self.grid[x][y].is_mine:
                 self.grid[x][y].add_mine()
                 mine_count += 1
