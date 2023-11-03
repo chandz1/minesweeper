@@ -1,14 +1,16 @@
-import itertools
 import random
+import PySimpleGUI as sg
 
 
 # Cell class
-class Cell:
+class Cell(sg.Button):
     # Initialize a cell
-    def __init__(self):
+    def __init__(self, coords, **kwargs):
+        super().__init__(**kwargs)
         self.is_mine = False
         self.flagged = False
         self.revealed = False
+        self.coords = coords
         self.surr_mines = 0
 
     # Add a mine to the cell
@@ -31,7 +33,22 @@ class Grid:
         self.row = row
         self.column = column
         self.mines = mines
-        self.grid = [[Cell() for _ in range(row)] for _ in range(column)]
+        self.grid = [
+            [
+                Cell(
+                    (i, j),
+                    border_width=2,
+                    font="any 16 bold",
+                    size=(1, 1),
+                    pad=(0, 0),
+                    key=(i, j),
+                    button_color="#BDBDBD",
+                    disabled_button_color=("black", "#BDBDBD"),
+                )
+                for i in range(row)
+            ]
+            for j in range(column)
+        ]
         self.add_mines()
 
     # Add mines to the grid at random
@@ -42,12 +59,15 @@ class Grid:
             if not self.grid[x][y].is_mine:
                 self.grid[x][y].set_mine()
                 mine_count += 1
-    
+
     def calc_surr_mines(self, i, j):
-        for a in range(i-1, i+2):
-            for b in range(j-1, j+2):
+        surr_mines = 0
+        for a in range(i - 1, i + 2):
+            for b in range(j - 1, j + 2):
                 if a == i and b == j:
                     continue
-                if 0 <= a < self.row and 0 <= b <= self.column:
+                if 0 <= a < self.row and 0 <= b < self.column:
+                    print(a, b)
                     if self.grid[a][b].is_mine:
-                        self.grid[i][j].surr_mines += 1
+                        surr_mines += 1
+        self.grid[i][j].surr_mines = surr_mines
