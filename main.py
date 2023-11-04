@@ -33,6 +33,7 @@ class Grid:
         self.row = row
         self.column = column
         self.mines = mines
+        self.flags = mines
         self.grid = [
             [
                 Cell(

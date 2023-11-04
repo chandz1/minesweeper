@@ -1,5 +1,6 @@
 import PySimpleGUI as sg
-from main import *
+from main import Grid
+import time
 
 sg.theme("Default1")
 
@@ -7,12 +8,22 @@ grid = Grid(16, 16, 40)
 
 menu_layout = [
     [
-        sg.Text(text="000", font="any 24 bold", pad=((4, 4), (0, 0)), text_color="red"),
+        sg.Text(
+            text="{:03d}".format(grid.flags),
+            font="any 24 bold",
+            pad=((4, 4), (0, 0)),
+            text_color="red",
+            key="-FLAGS-",
+        ),
         sg.Push(),
         sg.Button(border_width=2, pad=(0, 0), size=(2, 2)),
         sg.Push(),
         sg.Text(
-            text="100", font="any 24 bold", pad=((4, 4), (0, 0)), text_color="#FB0007"
+            text="000",
+            font="any 24 bold",
+            pad=((4, 4), (0, 0)),
+            text_color="#FB0007",
+            key="-TIMER-",
         ),
     ]
 ]
@@ -42,12 +53,23 @@ buttons_1d = [button for row in grid.grid for button in row]
 for btn in buttons_1d:
     btn.bind("<Button-3>", "Right-Click")
 
+timer_started = False
+current_time = 0
+
 
 while True:
-    event, values = window.read()
+    event, values = window.read(timeout=1000)
 
     if event == sg.WINDOW_CLOSED:
         break
+
+    if event != "__TIMEOUT__" and not timer_started:
+        timer_started = True
+        real_time = time.monotonic()
+
+    if timer_started:
+        current_time = int(time.monotonic() - real_time)
+        window["-TIMER-"].update("{:03d}".format(current_time))
 
     print(event)
     if "Right-Click" in event:
@@ -57,12 +79,23 @@ while True:
                 "",
                 disabled=False,
             )
+            grid.flags += 1
+            window["-FLAGS-"].update("{:03d}".format(grid.flags))
+
         else:
-            window[event[0]].update(
-                "?",
-                disabled=True,
-            )
+            if grid.flags > 0:
+                window[event[0]].update(
+                    "?",
+                    disabled=True,
+                )
+                grid.flags -= 1
+                window["-FLAGS-"].update("{:03d}".format(grid.flags))
+            else:
+                continue
         grid.grid[i][j].toggle_flag()
+        continue
+
+    if event == "__TIMEOUT__":
         continue
 
     i, j = event
