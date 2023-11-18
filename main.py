@@ -5,13 +5,17 @@ import PySimpleGUI as sg
 # Cell class
 class Cell(sg.Button):
     # Initialize a cell
-    def __init__(self, coords, **kwargs):
+    def __init__(self, coords, row, column, **kwargs):
         super().__init__(**kwargs)
         self.coords = coords
+        self.max_row = row
+        self.max_column = column
         self.mine = False
         self.flag = False
         self.revealed = False
         self.surr_mines = 0
+        self.surr_cells = []
+        self.__calc_surr_cells()
 
     # Add a mine to the cell
     def set_mine(self):
@@ -32,10 +36,30 @@ class Cell(sg.Button):
     # Reveal the cell state
     def reveal(self):
         self.revealed = True
+        super().update(text="💣", disabled=True)
+        super().unbind("<Button-3>")
+
+    # Check if cell has been revealed
+    def revealed(self):
+        return self.revealed
 
     # Increment surr mine count
     def set_surr_mines(self, mine_count):
         self.surr_mines = mine_count
+
+    # Set surrouding cells based on grid row and column
+    def __calc_surr_cells(self):
+        i, j = self.coords
+        for a in range(i - 1, i + 2):
+            for b in range(j - 1, j + 2):
+                if a == i and b == j:
+                    continue
+                if 0 <= a < self.max_row and 0 <= b < self.max_column:
+                    self.surr_cells.append((a, b))
+
+    # Get surrouding cells array
+    def get_surr_cells(self):
+        return self.surr_cells
 
 
 # Grid class
@@ -50,6 +74,8 @@ class Grid:
             [
                 Cell(
                     (i, j),
+                    row,
+                    column,
                     border_width=2,
                     font="any 16 bold",
                     size=(1, 1),
@@ -58,9 +84,9 @@ class Grid:
                     button_color="#BDBDBD",
                     disabled_button_color=("black", "#BDBDBD"),
                 )
-                for i in range(row)
+                for j in range(column)
             ]
-            for j in range(column)
+            for i in range(row)
         ]
         self.__add_mines()
 

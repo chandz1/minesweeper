@@ -66,8 +66,9 @@ timer_active = False
 
 def on_right_click(event):
     i, j = event[0]
+    cell = grid.grid[i][j]
     if event[1] == "Right-Click":
-        if grid.grid[i][j].flagged():
+        if cell.flagged():
             window[event[0]].update(
                 text="",
                 disabled=False,
@@ -85,17 +86,19 @@ def on_right_click(event):
                 window["-FLAGS-"].update("{:03d}".format(grid.flags))
             else:
                 return
-        grid.grid[i][j].toggle_flag()
+        cell.toggle_flag()
 
 
 def on_left_middle_click(event):
     i, j = event[0]
+    cell = grid.grid[i][j]
     if event[1] == "Left-Click" or event[1] == "Middle-Click":
-        if not grid.grid[i][j].flagged():
-            if grid.grid[i][j].is_mine():
+        if not cell.flagged():
+            if cell.is_mine():
+                cell.reveal()
                 return "mine"
             grid.calc_surr_mines(i, j)
-            if grid.grid[i][j].surr_mines == 0:
+            if cell.surr_mines == 0:
                 window[event[0]].update(
                     text="",
                     disabled=True,
@@ -105,7 +108,7 @@ def on_left_middle_click(event):
                 return
 
             window[event[0]].update(
-                str(grid.grid[i][j].surr_mines),
+                str(cell.surr_mines),
                 disabled=True,
                 button_color="gray",
                 disabled_button_color=("black", "gray"),
@@ -136,7 +139,7 @@ while True:
             on_right_click(event)
         case "Left-Click" | "Middle-Click":
             if on_left_middle_click(event) == "mine":
-                break
+                continue
             else:
                 continue
 
