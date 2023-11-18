@@ -56,28 +56,18 @@ layout = [
 window = sg.Window("Minesweeper", layout=layout, finalize=True)
 cells = [cell for row in grid.grid for cell in row]
 for cell in cells:
+    cell.bind("<Button-1>", "Left-Click")
+    cell.bind("<Button-2>", "Middle-Click")
     cell.bind("<Button-3>", "Right-Click")
 
 start_time = 0
 timer_active = False
 
-while True:
-    event, values = window.read(timeout=1000)
 
-    if event == sg.WINDOW_CLOSED:
-        break
-
-    if event != "__TIMEOUT__" and not timer_active:
-        timer_active = True
-        start_time = start_clock()
-
-    if timer_active:
-        window["-CLOCK-"].update("{:03d}".format(time_elapsed(start_time)))
-
-    print(event)
-    if "Right-Click" in event:
-        i, j = event[0]
-        if grid.grid[i][j].flag_status():
+def on_right_click(event):
+    i, j = event[0]
+    if event[1] == "Right-Click":
+        if grid.grid[i][j].flagged():
             window[event[0]].update(
                 text="",
                 disabled=False,
@@ -94,30 +84,60 @@ while True:
                 grid.flags -= 1
                 window["-FLAGS-"].update("{:03d}".format(grid.flags))
             else:
-                continue
+                return
         grid.grid[i][j].toggle_flag()
+
+
+def on_left_middle_click(event):
+    i, j = event[0]
+    if event[1] == "Left-Click" or event[1] == "Middle-Click":
+        if not grid.grid[i][j].flagged():
+            if grid.grid[i][j].is_mine():
+                return "mine"
+            grid.calc_surr_mines(i, j)
+            if grid.grid[i][j].surr_mines == 0:
+                window[event[0]].update(
+                    text="",
+                    disabled=True,
+                    button_color="gray",
+                )
+                window[event[0]].unbind("<Button-3>")
+                return
+
+            window[event[0]].update(
+                str(grid.grid[i][j].surr_mines),
+                disabled=True,
+                button_color="gray",
+                disabled_button_color=("black", "gray"),
+            )
+            window[event[0]].unbind("<Button-3>")
+
+
+while True:
+    event, values = window.read(timeout=1000)
+
+    if event == sg.WINDOW_CLOSED:
+        break
+
+    if event == "__TIMEOUT__" and not timer_active:
         continue
-
-    if event == "__TIMEOUT__":
-        continue
-
-    i, j = event
-    if not grid.grid[i][j].flagged:
-        if grid.grid[i][j].is_mine():
-            break
-        grid.calc_surr_mines(i, j)
-        if grid.grid[i][j].surr_mines == 0:
-            window[event].update("", disabled=True, button_color="gray")
-            window[event].unbind("<Button-3>")
-
+    elif not timer_active:
+        timer_active = True
+        start_time = start_clock()
+    elif timer_active:
+        window["-CLOCK-"].update("{:03d}".format(time_elapsed(start_time)))
+        if event == "__TIMEOUT__":
             continue
 
-        window[event].update(
-            str(grid.grid[i][j].surr_mines),
-            disabled=True,
-            button_color="gray",
-            disabled_button_color=("black", "gray"),
-        )
-        window[event].unbind("<Button-3>")
+    print(event)
+
+    match event[1]:
+        case "Right-Click":
+            on_right_click(event)
+        case "Left-Click" | "Middle-Click":
+            if on_left_middle_click(event) == "mine":
+                break
+            else:
+                continue
 
 window.close()

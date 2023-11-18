@@ -9,7 +9,7 @@ class Cell(sg.Button):
         super().__init__(**kwargs)
         self.coords = coords
         self.mine = False
-        self.flagged = False
+        self.flag = False
         self.revealed = False
         self.surr_mines = 0
 
@@ -23,19 +23,19 @@ class Cell(sg.Button):
 
     # Toggle the flag state
     def toggle_flag(self):
-        self.flagged = not self.flagged
+        self.flag = not self.flag
 
     # Get flag status
-    def flag_status(self):
-        return self.flagged
+    def flagged(self):
+        return self.flag
 
     # Reveal the cell state
     def reveal(self):
         self.revealed = True
 
     # Increment surr mine count
-    def increment_surr_mines(self):
-        self.surr_mines += 1
+    def set_surr_mines(self, mine_count):
+        self.surr_mines = mine_count
 
 
 # Grid class
@@ -77,12 +77,13 @@ class Grid:
                 mine_count += 1
 
     def calc_surr_mines(self, i, j):
-        if not self.grid[i][j].is_mine():
-            for a in range(i - 1, i + 2):
-                for b in range(j - 1, j + 2):
-                    if a == i and b == j:
-                        continue
-                    if 0 <= a < self.row and 0 <= b < self.column:
-                        print(a, b)
-                        if self.grid[a][b].is_mine():
-                            self.grid[i][j].increment_surr_mines()
+        surr_mines = 0
+        for a in range(i - 1, i + 2):
+            for b in range(j - 1, j + 2):
+                if a == i and b == j:
+                    continue
+                if 0 <= a < self.row and 0 <= b < self.column:
+                    print(a, b)
+                    if self.grid[a][b].is_mine():
+                        surr_mines += 1
+        self.grid[i][j].set_surr_mines(surr_mines)
