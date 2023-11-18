@@ -1,6 +1,6 @@
 import PySimpleGUI as sg
 from main import Grid
-import time
+from util import time_elapsed, start_clock
 
 sg.theme("Default1")
 
@@ -23,7 +23,7 @@ menu_layout = [
             font="any 24 bold",
             pad=((4, 4), (0, 0)),
             text_color="#FB0007",
-            key="-TIMER-",
+            key="-CLOCK-",
         ),
     ]
 ]
@@ -54,13 +54,12 @@ layout = [
 ]
 
 window = sg.Window("Minesweeper", layout=layout, finalize=True)
-buttons_1d = [button for row in grid.grid for button in row]
-for btn in buttons_1d:
-    btn.bind("<Button-3>", "Right-Click")
+cells = [cell for row in grid.grid for cell in row]
+for cell in cells:
+    cell.bind("<Button-3>", "Right-Click")
 
-timer_started = False
-current_time = 0
-
+start_time = 0
+timer_active = False
 
 while True:
     event, values = window.read(timeout=1000)
@@ -68,20 +67,19 @@ while True:
     if event == sg.WINDOW_CLOSED:
         break
 
-    if event != "__TIMEOUT__" and not timer_started:
-        timer_started = True
-        real_time = time.monotonic()
+    if event != "__TIMEOUT__" and not timer_active:
+        timer_active = True
+        start_time = start_clock()
 
-    if timer_started:
-        current_time = int(time.monotonic() - real_time)
-        window["-TIMER-"].update("{:03d}".format(current_time))
+    if timer_active:
+        window["-CLOCK-"].update("{:03d}".format(time_elapsed(start_time)))
 
     print(event)
     if "Right-Click" in event:
         i, j = event[0]
-        if grid.grid[i][j].flagged:
+        if grid.grid[i][j].flag_status():
             window[event[0]].update(
-                "",
+                text="",
                 disabled=False,
             )
             grid.flags += 1
@@ -90,7 +88,7 @@ while True:
         else:
             if grid.flags > 0:
                 window[event[0]].update(
-                    "?",
+                    text="?",
                     disabled=True,
                 )
                 grid.flags -= 1

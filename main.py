@@ -25,6 +25,10 @@ class Cell(sg.Button):
     def toggle_flag(self):
         self.flagged = not self.flagged
 
+    # Get flag status
+    def flag_status(self):
+        return self.flagged
+
     # Reveal the cell state
     def reveal(self):
         self.revealed = True
@@ -37,11 +41,11 @@ class Cell(sg.Button):
 # Grid class
 class Grid:
     # Initialize a Grid
-    def __init__(self, row, column, mines):
+    def __init__(self, row, column, total_mines):
         self.row = row
         self.column = column
-        self.mines = mines
-        self.flags = mines
+        self.total_mines = total_mines
+        self.flags = total_mines
         self.grid = [
             [
                 Cell(
@@ -63,7 +67,7 @@ class Grid:
     # Add mines to the grid at random
     def __add_mines(self):
         mine_count = 0
-        while mine_count < self.mines:
+        while mine_count < self.total_mines:
             print(mine_count)
             y, x = random.randint(0, self.row - 1), random.randint(
                 0, self.column - 1
