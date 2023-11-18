@@ -29,7 +29,12 @@ menu_layout = [
 ]
 
 menu_frame = sg.Frame(
-    "", menu_layout, pad=((0, 0), (0, 4)), expand_x=True, expand_y=True, border_width=6
+    "",
+    menu_layout,
+    pad=((0, 0), (0, 4)),
+    expand_x=True,
+    expand_y=True,
+    border_width=6,
 )
 
 button_frame = sg.Frame(
@@ -100,7 +105,7 @@ while True:
 
     i, j = event
     if not grid.grid[i][j].flagged:
-        if grid.grid[i][j].is_mine:
+        if grid.grid[i][j].is_mine():
             break
         grid.calc_surr_mines(i, j)
         if grid.grid[i][j].surr_mines == 0:

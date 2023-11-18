@@ -7,15 +7,19 @@ class Cell(sg.Button):
     # Initialize a cell
     def __init__(self, coords, **kwargs):
         super().__init__(**kwargs)
-        self.is_mine = False
+        self.coords = coords
+        self.mine = False
         self.flagged = False
         self.revealed = False
-        self.coords = coords
         self.surr_mines = 0
 
     # Add a mine to the cell
     def set_mine(self):
-        self.is_mine = True
+        self.mine = True
+
+    # Check if cell contains mine
+    def is_mine(self):
+        return self.mine
 
     # Toggle the flag state
     def toggle_flag(self):
@@ -24,6 +28,10 @@ class Cell(sg.Button):
     # Reveal the cell state
     def reveal(self):
         self.revealed = True
+
+    # Increment surr mine count
+    def increment_surr_mines(self):
+        self.surr_mines += 1
 
 
 # Grid class
@@ -50,25 +58,27 @@ class Grid:
             ]
             for j in range(column)
         ]
-        self.add_mines()
+        self.__add_mines()
 
     # Add mines to the grid at random
-    def add_mines(self):
+    def __add_mines(self):
         mine_count = 0
         while mine_count < self.mines:
-            y, x = random.randint(0, self.row - 1), random.randint(0, self.column - 1)
-            if not self.grid[x][y].is_mine:
+            print(mine_count)
+            y, x = random.randint(0, self.row - 1), random.randint(
+                0, self.column - 1
+            )
+            if not self.grid[x][y].is_mine():
                 self.grid[x][y].set_mine()
                 mine_count += 1
 
     def calc_surr_mines(self, i, j):
-        surr_mines = 0
-        for a in range(i - 1, i + 2):
-            for b in range(j - 1, j + 2):
-                if a == i and b == j:
-                    continue
-                if 0 <= a < self.row and 0 <= b < self.column:
-                    print(a, b)
-                    if self.grid[a][b].is_mine:
-                        surr_mines += 1
-        self.grid[i][j].surr_mines = surr_mines
+        if not self.grid[i][j].is_mine():
+            for a in range(i - 1, i + 2):
+                for b in range(j - 1, j + 2):
+                    if a == i and b == j:
+                        continue
+                    if 0 <= a < self.row and 0 <= b < self.column:
+                        print(a, b)
+                        if self.grid[a][b].is_mine():
+                            self.grid[i][j].increment_surr_mines()
