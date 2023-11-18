@@ -6,4 +6,4 @@ def start_clock():
 
 
 def time_elapsed(start_time):
-    return int(time.monotonic() - start_time)
+    return min(int(time.monotonic() - start_time), 999)

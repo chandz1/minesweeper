@@ -12,7 +12,7 @@ class Cell(sg.Button):
         self.max_column = column
         self.mine = False
         self.flag = False
-        self.revealed = False
+        self.reveal_status = False
         self.surr_mines = 0
         self.surr_cells = []
         self.__calc_surr_cells()
@@ -35,13 +35,29 @@ class Cell(sg.Button):
 
     # Reveal the cell state
     def reveal(self):
-        self.revealed = True
-        super().update(text="💣", disabled=True)
-        super().unbind("<Button-3>")
+        if self.reveal_status or self.flag:
+            return
+        self.reveal_status = True
+        if self.mine:
+            super().update(text="💣", disabled=True)
+            return "mine"
+        elif self.surr_mines:
+            super().update(
+                str(self.surr_mines),
+                disabled=True,
+                button_color="gray",
+                disabled_button_color=("black", "gray"),
+            )
+        else:
+            super().update(
+                text="",
+                disabled=True,
+                button_color="gray",
+            )
 
     # Check if cell has been revealed
     def revealed(self):
-        return self.revealed
+        return self.reveal_status
 
     # Increment surr mine count
     def set_surr_mines(self, mine_count):
@@ -109,7 +125,6 @@ class Grid:
                 if a == i and b == j:
                     continue
                 if 0 <= a < self.row and 0 <= b < self.column:
-                    print(a, b)
                     if self.grid[a][b].is_mine():
                         surr_mines += 1
         self.grid[i][j].set_surr_mines(surr_mines)

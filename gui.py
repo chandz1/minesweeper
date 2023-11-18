@@ -65,55 +65,37 @@ timer_active = False
 
 
 def on_right_click(event):
-    i, j = event[0]
+    i, j = event
     cell = grid.grid[i][j]
-    if event[1] == "Right-Click":
-        if cell.flagged():
-            window[event[0]].update(
-                text="",
-                disabled=False,
-            )
-            grid.flags += 1
-            window["-FLAGS-"].update("{:03d}".format(grid.flags))
+    if cell.revealed():
+        return
+    if cell.flagged():
+        window[event].update(
+            text="",
+            disabled=False,
+        )
+        grid.flags += 1
+        window["-FLAGS-"].update("{:03d}".format(grid.flags))
 
+    else:
+        if grid.flags > 0:
+            window[event].update(
+                text="?",
+                disabled=True,
+            )
+            grid.flags -= 1
+            window["-FLAGS-"].update("{:03d}".format(grid.flags))
         else:
-            if grid.flags > 0:
-                window[event[0]].update(
-                    text="?",
-                    disabled=True,
-                )
-                grid.flags -= 1
-                window["-FLAGS-"].update("{:03d}".format(grid.flags))
-            else:
-                return
-        cell.toggle_flag()
+            return
+    cell.toggle_flag()
 
 
 def on_left_middle_click(event):
     i, j = event[0]
     cell = grid.grid[i][j]
     if event[1] == "Left-Click" or event[1] == "Middle-Click":
-        if not cell.flagged():
-            if cell.is_mine():
-                cell.reveal()
-                return "mine"
-            grid.calc_surr_mines(i, j)
-            if cell.surr_mines == 0:
-                window[event[0]].update(
-                    text="",
-                    disabled=True,
-                    button_color="gray",
-                )
-                window[event[0]].unbind("<Button-3>")
-                return
-
-            window[event[0]].update(
-                str(cell.surr_mines),
-                disabled=True,
-                button_color="gray",
-                disabled_button_color=("black", "gray"),
-            )
-            window[event[0]].unbind("<Button-3>")
+        grid.calc_surr_mines(i, j)
+        return cell.reveal()
 
 
 while True:
@@ -136,7 +118,7 @@ while True:
 
     match event[1]:
         case "Right-Click":
-            on_right_click(event)
+            on_right_click(event[0])
         case "Left-Click" | "Middle-Click":
             if on_left_middle_click(event) == "mine":
                 continue
