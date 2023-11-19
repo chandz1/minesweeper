@@ -17,7 +17,7 @@ menu_layout = [
         ),
         sg.Push(),
         sg.Button(
-            image_source="smiley.png",
+            image_filename="smile.png",
             image_size=(30, 30),
             border_width=2,
             pad=(0, 0),
@@ -73,6 +73,10 @@ timer_active = False
 
 
 def end_game():
+    window["-EXIT-"].update(
+        image_filename="sad.png",
+        image_size=(30, 30),
+    )
     for cell in cells:
         cell.unbind("<Button-1>")
         cell.unbind("<Button-2>")

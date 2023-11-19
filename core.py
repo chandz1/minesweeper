@@ -53,8 +53,23 @@ class Cell(sg.Button):
 
     # Reveal the cell state
     def reveal(self, game_over=False):
-        if self.reveal_status or self.flag:
+        # Return if cell has already been revealed or if
+        # the cell has a flag on it and the game isn't over
+        if self.reveal_status or (self.flag and not game_over):
             return
+        # Update false flags to red color and return
+        elif self.flag and game_over and not self.mine:
+            super().update(
+                text="?",
+                disabled=True,
+                button_color="#BDBDBD",
+                disabled_button_color=("red", "#BDBDBD"),
+            )
+            return
+        # If the cell has a flag and mine then return
+        elif self.flag and self.mine:
+            return
+
         self.reveal_status = True
         if self.mine:
             super().update(
