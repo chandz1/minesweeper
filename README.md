@@ -1,9 +1,9 @@
 <h1 align="center">Minesweeper: A Simple Implementation of the Original</h1>
 
 ## Table of Contents
-[Requirements](#requirements)
-[Installation](#installation)
-[Important](#important)
+[Requirements](#requirements)  
+[Installation](#installation)  
+[Important](#important)  
 
 ## Requirements
 Recommended:
