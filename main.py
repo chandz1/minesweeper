@@ -26,24 +26,49 @@ class Cell(sg.Button):
         return self.mine
 
     # Toggle the flag state
-    def toggle_flag(self):
-        self.flag = not self.flag
+    def toggle_flag(self, flag_count):
+        if self.reveal_status:
+            return flag_count
+        if self.flag:
+            super().update(
+                text="",
+                disabled=False,
+            )
+            self.flag = not self.flag
+            return flag_count + 1
+        else:
+            if flag_count > 0:
+                super().update(
+                    text="?",
+                    disabled=True,
+                )
+                self.flag = not self.flag
+                return flag_count - 1
+            else:
+                return flag_count
 
     # Get flag status
     def flagged(self):
         return self.flag
 
     # Reveal the cell state
-    def reveal(self):
+    def reveal(self, game_over=False):
         if self.reveal_status or self.flag:
             return
         self.reveal_status = True
         if self.mine:
-            super().update(text="💣", disabled=True)
+            super().update(
+                text="💣",
+                disabled=True,
+                button_color="red",
+                disabled_button_color=("black", "red"),
+            )
             return "mine"
+        elif game_over:
+            super().update(text="", disabled=True)
         elif self.surr_mines:
             super().update(
-                str(self.surr_mines),
+                text=str(self.surr_mines),
                 disabled=True,
                 button_color="gray",
                 disabled_button_color=("black", "gray"),
@@ -81,7 +106,7 @@ class Cell(sg.Button):
 # Grid class
 class Grid:
     # Initialize a Grid
-    def __init__(self, row, column, total_mines):
+    def __init__(self, row=16, column=16, total_mines=40):
         self.row = row
         self.column = column
         self.total_mines = total_mines
@@ -118,13 +143,9 @@ class Grid:
                 self.grid[x][y].set_mine()
                 mine_count += 1
 
-    def calc_surr_mines(self, i, j):
+    def calc_surr_mines(self, cell):
         surr_mines = 0
-        for a in range(i - 1, i + 2):
-            for b in range(j - 1, j + 2):
-                if a == i and b == j:
-                    continue
-                if 0 <= a < self.row and 0 <= b < self.column:
-                    if self.grid[a][b].is_mine():
-                        surr_mines += 1
-        self.grid[i][j].set_surr_mines(surr_mines)
+        for a, b in cell.get_surr_cells():
+            if self.grid[a][b].is_mine():
+                surr_mines += 1
+        cell.set_surr_mines(surr_mines)

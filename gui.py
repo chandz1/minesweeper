@@ -4,7 +4,7 @@ from util import time_elapsed, start_clock
 
 sg.theme("Default1")
 
-grid = Grid(16, 16, 40)
+grid = Grid()
 
 menu_layout = [
     [
@@ -16,7 +16,14 @@ menu_layout = [
             key="-FLAGS-",
         ),
         sg.Push(),
-        sg.Button(border_width=2, pad=(0, 0), size=(2, 2)),
+        sg.Button(
+            image_source="smiley.png",
+            image_size=(30, 30),
+            border_width=2,
+            pad=(0, 0),
+            size=(2, 2),
+            key="-RESET-",
+        ),
         sg.Push(),
         sg.Text(
             text="000",
@@ -44,6 +51,7 @@ button_frame = sg.Frame(
     expand_x=True,
     expand_y=True,
     border_width=6,
+    key="-GRID-",
 )
 
 layout = [
@@ -64,38 +72,30 @@ start_time = 0
 timer_active = False
 
 
-def on_right_click(event):
-    i, j = event
-    cell = grid.grid[i][j]
-    if cell.revealed():
-        return
-    if cell.flagged():
-        window[event].update(
-            text="",
-            disabled=False,
-        )
-        grid.flags += 1
-        window["-FLAGS-"].update("{:03d}".format(grid.flags))
-
-    else:
-        if grid.flags > 0:
-            window[event].update(
-                text="?",
-                disabled=True,
-            )
-            grid.flags -= 1
-            window["-FLAGS-"].update("{:03d}".format(grid.flags))
-        else:
-            return
-    cell.toggle_flag()
+def reset_game(grid):
+    del grid
+    grid = Grid()
 
 
-def on_left_middle_click(event):
-    i, j = event[0]
-    cell = grid.grid[i][j]
-    if event[1] == "Left-Click" or event[1] == "Middle-Click":
-        grid.calc_surr_mines(i, j)
-        return cell.reveal()
+def end_game():
+    for cell in cells:
+        cell.unbind("<Button-1>")
+        cell.unbind("<Button-2>")
+        cell.unbind("<Button-3>")
+        cell.reveal(game_over=True)
+
+
+def on_right_click(coords):
+    cell = grid.grid[coords[0]][coords[1]]
+    grid.flags = cell.toggle_flag(grid.flags)
+    window["-FLAGS-"].update("{:03d}".format(grid.flags))
+
+
+def on_left_middle_click(coords):
+    cell = grid.grid[coords[0]][coords[1]]
+    grid.calc_surr_mines(cell)
+    if cell.reveal() == "mine":
+        end_game()
 
 
 while True:
@@ -115,12 +115,14 @@ while True:
             continue
 
     print(event)
+    if event == "-RESET-":
+        reset_game(grid)
 
     match event[1]:
         case "Right-Click":
             on_right_click(event[0])
         case "Left-Click" | "Middle-Click":
-            if on_left_middle_click(event) == "mine":
+            if on_left_middle_click(event[0]) == "mine":
                 continue
             else:
                 continue
