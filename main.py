@@ -67,12 +67,14 @@ for cell in cells:
     cell.bind("<Button-1>", "Left-Click")
     cell.bind("<Button-2>", "Middle-Click")
     cell.bind("<Button-3>", "Right-Click")
+    grid.calc_surr_mines(cell)
 
 start_time = 0
 timer_active = False
 
 
 def end_game():
+    global timer_active
     window["-EXIT-"].update(
         image_filename="sad.png",
         image_size=(30, 30),
@@ -81,25 +83,25 @@ def end_game():
         cell.unbind("<Button-1>")
         cell.unbind("<Button-2>")
         cell.unbind("<Button-3>")
-        cell.reveal(game_over=True)
+        cell.reveal(game_over=True, grid=grid)
+    timer_active = False
 
 
-def on_right_click(coords):
-    cell = grid.grid[coords[0]][coords[1]]
+def on_right_click(cell):
     grid.flags = cell.toggle_flag(grid.flags)
     window["-FLAGS-"].update("{:03d}".format(grid.flags))
 
 
-def on_left_middle_click(coords):
-    cell = grid.grid[coords[0]][coords[1]]
-    grid.calc_surr_mines(cell)
-    if cell.reveal() == "mine":
+def on_left_middle_click(cell):
+    if cell.reveal(grid=grid) == "mine":
         end_game()
         return "mine"
 
 
 while True:
     event, values = window.read(timeout=1000)
+
+    print(event)
 
     if event == sg.WINDOW_CLOSED or event == "-EXIT-":
         break
@@ -114,14 +116,20 @@ while True:
         if event == "__TIMEOUT__":
             continue
 
+    coords = event[0]
+    cell = grid.grid[coords[0]][coords[1]]
     match event[1]:
         case "Right-Click":
-            on_right_click(event[0])
+            on_right_click(cell)
         case "Left-Click" | "Middle-Click":
-            if on_left_middle_click(event[0]) == "mine":
-                timer_active = False
+            if window[coords].Disabled:
+                print("disabled")
+                grid.calc_surr_flags(cell)
+                if cell.get_surr_flags() == cell.get_surr_mines():
+                    if grid.reveal_surr(cell) == "mine":
+                        end_game()
                 continue
-            else:
-                continue
+
+            on_left_middle_click(cell)
 
 window.close()

@@ -14,6 +14,7 @@ class Cell(sg.Button):
         self.flag = False
         self.reveal_status = False
         self.surr_mines = 0
+        self.surr_flags = 0
         self.surr_cells = []
         self.__calc_surr_cells()
 
@@ -52,12 +53,11 @@ class Cell(sg.Button):
         return self.flag
 
     # Reveal the cell state
-    def reveal(self, game_over=False):
-        # Return if cell has already been revealed or if
-        # the cell has a flag on it and the game isn't over
+    def reveal(self, game_over=False, grid=None):
+        # If the cell has a flag and the game isn't over return
         if self.reveal_status or (self.flag and not game_over):
             return
-        # Update false flags to red color and return
+        # If game over then update false flags to red color and return
         elif self.flag and game_over and not self.mine:
             super().update(
                 text="?",
@@ -94,16 +94,22 @@ class Cell(sg.Button):
                 disabled=True,
                 button_color="gray",
             )
+            for coords in self.surr_cells:
+                grid.grid[coords[0]][coords[1]].reveal(grid=grid)
 
     # Check if cell has been revealed
     def revealed(self):
         return self.reveal_status
 
-    # Increment surr mine count
+    # Set surrounding mine count
     def set_surr_mines(self, mine_count):
         self.surr_mines = mine_count
 
-    # Set surrouding cells based on grid row and column
+    # Get surrounding mine count
+    def get_surr_mines(self):
+        return self.surr_mines
+
+    # Calculate and set surrouding cells based on grid row and column
     def __calc_surr_cells(self):
         i, j = self.coords
         for a in range(i - 1, i + 2):
@@ -116,6 +122,14 @@ class Cell(sg.Button):
     # Get surrouding cells array
     def get_surr_cells(self):
         return self.surr_cells
+
+    # Set surrounding flags count
+    def set_surr_flags(self, flag_count):
+        self.surr_flags = flag_count
+
+    # Get surrounding flag count
+    def get_surr_flags(self):
+        return self.surr_flags
 
 
 # Grid class
@@ -163,3 +177,20 @@ class Grid:
             if self.grid[a][b].is_mine():
                 surr_mines += 1
         cell.set_surr_mines(surr_mines)
+
+    def calc_surr_flags(self, cell):
+        surr_flags = 0
+        for a, b in cell.get_surr_cells():
+            if self.grid[a][b].flagged():
+                surr_flags += 1
+        cell.set_surr_flags(surr_flags)
+
+    def reveal_surr(self, cell):
+        for a, b in cell.get_surr_cells():
+            temp_cell = self.grid[a][b]
+            if temp_cell.is_mine():
+                if temp_cell.reveal(grid=self) == "mine":
+                    return "mine"
+        for a, b in cell.get_surr_cells():
+            self.grid[a][b].reveal(grid=self)
+        return
