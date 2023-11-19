@@ -73,7 +73,18 @@ start_time = 0
 timer_active = False
 
 
-def end_game():
+def check_game_won():
+    global timer_active
+    if grid.get_revealed() == (grid.size - grid.total_mines):
+        for cell in cells:
+            cell.unbind("<Button-1>")
+            cell.unbind("<Button-2>")
+            cell.unbind("<Button-3>")
+            cell.update(disabled=True)
+        timer_active = False
+
+
+def game_lost():
     global timer_active
     window["-EXIT-"].update(
         image_filename="sad.png",
@@ -94,7 +105,7 @@ def on_right_click(cell):
 
 def on_left_middle_click(cell):
     if cell.reveal(grid=grid) == "mine":
-        end_game()
+        game_lost()
         return "mine"
 
 
@@ -120,13 +131,15 @@ while True:
         case "Right-Click":
             on_right_click(cell)
         case "Left-Click" | "Middle-Click":
-            if window[coords].Disabled:
+            if window[coords].Disabled and not cell.flagged():
                 grid.calc_surr_flags(cell)
                 if cell.get_surr_flags() == cell.get_surr_mines():
                     if grid.reveal_surr(cell) == "mine":
-                        end_game()
-                continue
+                        game_lost()
 
-            on_left_middle_click(cell)
+            else:
+                on_left_middle_click(cell)
+    check_game_won()
+    window.refresh()
 
 window.close()

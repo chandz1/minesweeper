@@ -71,6 +71,7 @@ class Cell(sg.Button):
             return
 
         self.reveal_status = True
+        grid.increment_revealed()
         if self.mine:
             super().update(
                 text="💣",
@@ -138,7 +139,9 @@ class Grid:
     def __init__(self, row=16, column=16, total_mines=40):
         self.row = row
         self.column = column
+        self.size = row * column
         self.total_mines = total_mines
+        self.revealed = 0
         self.flags = total_mines
         self.grid = [
             [
@@ -194,3 +197,9 @@ class Grid:
         for a, b in cell.get_surr_cells():
             self.grid[a][b].reveal(grid=self)
         return
+
+    def increment_revealed(self):
+        self.revealed += 1
+
+    def get_revealed(self):
+        return self.revealed
