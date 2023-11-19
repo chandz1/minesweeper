@@ -1,150 +1,123 @@
-import random
 import PySimpleGUI as sg
+from main import Grid
+from util import time_elapsed, start_clock
+
+sg.theme("Default1")
+
+grid = Grid()
+
+menu_layout = [
+    [
+        sg.Text(
+            text="{:03d}".format(grid.flags),
+            font="any 24 bold",
+            pad=((4, 4), (0, 0)),
+            text_color="red",
+            key="-FLAGS-",
+        ),
+        sg.Push(),
+        sg.Button(
+            image_source="smiley.png",
+            image_size=(30, 30),
+            border_width=2,
+            pad=(0, 0),
+            size=(2, 2),
+            key="-EXIT-",
+        ),
+        sg.Push(),
+        sg.Text(
+            text="000",
+            font="any 24 bold",
+            pad=((4, 4), (0, 0)),
+            text_color="#FB0007",
+            key="-CLOCK-",
+        ),
+    ]
+]
+
+menu_frame = sg.Frame(
+    "",
+    menu_layout,
+    pad=((0, 0), (0, 4)),
+    expand_x=True,
+    expand_y=True,
+    border_width=6,
+)
+
+button_frame = sg.Frame(
+    "",
+    grid.grid,
+    pad=((0, 0), (4, 0)),
+    expand_x=True,
+    expand_y=True,
+    border_width=6,
+    key="-GRID-",
+)
+
+layout = [
+    [sg.VPush()],
+    [menu_frame],
+    [button_frame],
+    [sg.VPush()],
+]
+
+window = sg.Window("Minesweeper", layout=layout, finalize=True)
+cells = [cell for row in grid.grid for cell in row]
+for cell in cells:
+    cell.bind("<Button-1>", "Left-Click")
+    cell.bind("<Button-2>", "Middle-Click")
+    cell.bind("<Button-3>", "Right-Click")
+
+start_time = 0
+timer_active = False
 
 
-# Cell class
-class Cell(sg.Button):
-    # Initialize a cell
-    def __init__(self, coords, row, column, **kwargs):
-        super().__init__(**kwargs)
-        self.coords = coords
-        self.max_row = row
-        self.max_column = column
-        self.mine = False
-        self.flag = False
-        self.reveal_status = False
-        self.surr_mines = 0
-        self.surr_cells = []
-        self.__calc_surr_cells()
+def end_game():
+    for cell in cells:
+        cell.unbind("<Button-1>")
+        cell.unbind("<Button-2>")
+        cell.unbind("<Button-3>")
+        cell.reveal(game_over=True)
 
-    # Add a mine to the cell
-    def set_mine(self):
-        self.mine = True
 
-    # Check if cell contains mine
-    def is_mine(self):
-        return self.mine
+def on_right_click(coords):
+    cell = grid.grid[coords[0]][coords[1]]
+    grid.flags = cell.toggle_flag(grid.flags)
+    window["-FLAGS-"].update("{:03d}".format(grid.flags))
 
-    # Toggle the flag state
-    def toggle_flag(self, flag_count):
-        if self.reveal_status:
-            return flag_count
-        if self.flag:
-            super().update(
-                text="",
-                disabled=False,
-            )
-            self.flag = not self.flag
-            return flag_count + 1
-        else:
-            if flag_count > 0:
-                super().update(
-                    text="?",
-                    disabled=True,
-                )
-                self.flag = not self.flag
-                return flag_count - 1
+
+def on_left_middle_click(coords):
+    cell = grid.grid[coords[0]][coords[1]]
+    grid.calc_surr_mines(cell)
+    if cell.reveal() == "mine":
+        end_game()
+        return "mine"
+
+
+while True:
+    event, values = window.read(timeout=1000)
+
+    if event == sg.WINDOW_CLOSED or event == "-EXIT-":
+        break
+
+    if event == "__TIMEOUT__" and not timer_active:
+        continue
+    elif not timer_active:
+        timer_active = True
+        start_time = start_clock()
+    elif timer_active:
+        window["-CLOCK-"].update("{:03d}".format(time_elapsed(start_time)))
+        if event == "__TIMEOUT__":
+            continue
+
+    match event[1]:
+        case "Right-Click":
+            on_right_click(event[0])
+        case "Left-Click" | "Middle-Click":
+            if on_left_middle_click(event[0]) == "mine":
+                timer_active = False
+                continue
             else:
-                return flag_count
+                continue
 
-    # Get flag status
-    def flagged(self):
-        return self.flag
-
-    # Reveal the cell state
-    def reveal(self, game_over=False):
-        if self.reveal_status or self.flag:
-            return
-        self.reveal_status = True
-        if self.mine:
-            super().update(
-                text="💣",
-                disabled=True,
-                button_color="red",
-                disabled_button_color=("black", "red"),
-            )
-            return "mine"
-        elif game_over:
-            super().update(text="", disabled=True)
-        elif self.surr_mines:
-            super().update(
-                text=str(self.surr_mines),
-                disabled=True,
-                button_color="gray",
-                disabled_button_color=("black", "gray"),
-            )
-        else:
-            super().update(
-                text="",
-                disabled=True,
-                button_color="gray",
-            )
-
-    # Check if cell has been revealed
-    def revealed(self):
-        return self.reveal_status
-
-    # Increment surr mine count
-    def set_surr_mines(self, mine_count):
-        self.surr_mines = mine_count
-
-    # Set surrouding cells based on grid row and column
-    def __calc_surr_cells(self):
-        i, j = self.coords
-        for a in range(i - 1, i + 2):
-            for b in range(j - 1, j + 2):
-                if a == i and b == j:
-                    continue
-                if 0 <= a < self.max_row and 0 <= b < self.max_column:
-                    self.surr_cells.append((a, b))
-
-    # Get surrouding cells array
-    def get_surr_cells(self):
-        return self.surr_cells
-
-
-# Grid class
-class Grid:
-    # Initialize a Grid
-    def __init__(self, row=16, column=16, total_mines=40):
-        self.row = row
-        self.column = column
-        self.total_mines = total_mines
-        self.flags = total_mines
-        self.grid = [
-            [
-                Cell(
-                    (i, j),
-                    row,
-                    column,
-                    border_width=2,
-                    font="any 16 bold",
-                    size=(1, 1),
-                    pad=(0, 0),
-                    key=(i, j),
-                    button_color="#BDBDBD",
-                    disabled_button_color=("black", "#BDBDBD"),
-                )
-                for j in range(column)
-            ]
-            for i in range(row)
-        ]
-        self.__add_mines()
-
-    # Add mines to the grid at random
-    def __add_mines(self):
-        mine_count = 0
-        while mine_count < self.total_mines:
-            y, x = random.randint(0, self.row - 1), random.randint(
-                0, self.column - 1
-            )
-            if not self.grid[x][y].is_mine():
-                self.grid[x][y].set_mine()
-                mine_count += 1
-
-    def calc_surr_mines(self, cell):
-        surr_mines = 0
-        for a, b in cell.get_surr_cells():
-            if self.grid[a][b].is_mine():
-                surr_mines += 1
-        cell.set_surr_mines(surr_mines)
+window.close()
