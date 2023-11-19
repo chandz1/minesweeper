@@ -101,8 +101,6 @@ def on_left_middle_click(cell):
 while True:
     event, values = window.read(timeout=1000)
 
-    print(event)
-
     if event == sg.WINDOW_CLOSED or event == "-EXIT-":
         break
 
@@ -123,7 +121,6 @@ while True:
             on_right_click(cell)
         case "Left-Click" | "Middle-Click":
             if window[coords].Disabled:
-                print("disabled")
                 grid.calc_surr_flags(cell)
                 if cell.get_surr_flags() == cell.get_surr_mines():
                     if grid.reveal_surr(cell) == "mine":
