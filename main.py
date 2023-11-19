@@ -135,7 +135,6 @@ class Grid:
     def __add_mines(self):
         mine_count = 0
         while mine_count < self.total_mines:
-            print(mine_count)
             y, x = random.randint(0, self.row - 1), random.randint(
                 0, self.column - 1
             )

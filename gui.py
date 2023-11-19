@@ -22,7 +22,7 @@ menu_layout = [
             border_width=2,
             pad=(0, 0),
             size=(2, 2),
-            key="-RESET-",
+            key="-EXIT-",
         ),
         sg.Push(),
         sg.Text(
@@ -72,11 +72,6 @@ start_time = 0
 timer_active = False
 
 
-def reset_game(grid):
-    del grid
-    grid = Grid()
-
-
 def end_game():
     for cell in cells:
         cell.unbind("<Button-1>")
@@ -96,12 +91,13 @@ def on_left_middle_click(coords):
     grid.calc_surr_mines(cell)
     if cell.reveal() == "mine":
         end_game()
+        return "mine"
 
 
 while True:
     event, values = window.read(timeout=1000)
 
-    if event == sg.WINDOW_CLOSED:
+    if event == sg.WINDOW_CLOSED or event == "-EXIT-":
         break
 
     if event == "__TIMEOUT__" and not timer_active:
@@ -114,15 +110,12 @@ while True:
         if event == "__TIMEOUT__":
             continue
 
-    print(event)
-    if event == "-RESET-":
-        reset_game(grid)
-
     match event[1]:
         case "Right-Click":
             on_right_click(event[0])
         case "Left-Click" | "Middle-Click":
             if on_left_middle_click(event[0]) == "mine":
+                timer_active = False
                 continue
             else:
                 continue
