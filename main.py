@@ -1,5 +1,5 @@
 import PySimpleGUI as sg
-from main import Grid
+from core import Grid
 from util import time_elapsed, start_clock
 
 sg.theme("Default1")
